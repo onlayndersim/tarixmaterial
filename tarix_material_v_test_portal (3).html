@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarix Mərkəzi - Material, Test və Video Portalı</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800">
+
+    <div id="loading-screen" class="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50 text-white">
+        <svg class="animate-spin h-10 w-10 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <h2 class="text-xl font-bold">Portal yüklənir...</h2>
+    </div>
+
+    <div id="auth-screen" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-40 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md fade-in">
+            <div class="text-center mb-6">
+                <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Dərs Portalına Giriş</h2>
+                <p class="text-slate-500 mt-2 text-sm">Materialları oxumaq və video dərsləri izləmək üçün adını daxil et. (Müəllim kimi daxil olmaq üçün ada "Müəllim" yazın)</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Ad və Soyad</label>
+                    <input type="text" id="input-name" placeholder="Məs: Leyla Məmmədova və ya Müəllim" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <button id="btn-login" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg shadow-blue-500/30">
+                    Daxil Ol
+                </button>
+                <div id="auth-error" class="hidden text-red-500 text-sm text-center font-medium">Zəhmət olmasa ad və soyadınızı daxil edin.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-screen" class="hidden flex flex-col min-h-screen">
+        <header class="bg-white shadow-sm sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-blue-600 text-white p-2 rounded-xl shadow-md">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        </div>
+                        <h1 class="text-xl font-black text-slate-800 tracking-tight">Tarix Portalı</h1>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl">
+                        <button onclick="switchTab('topics')" id="nav-topics" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-bold bg-white shadow-sm text-blue-600 transition">Dərs və PDF</button>
+                        <button onclick="switchTab('videos')" id="nav-videos" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition">Video Dərslər</button>
+                        <button onclick="switchTab('tracker')" id="nav-tracker" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition">Hesabatım</button>
+                        <button id="nav-teacher" onclick="switchTab('teacher')" class="hidden px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-purple-600 hover:bg-purple-50 transition border border-purple-200">Müəllim Paneli</button>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="text-right hidden sm:block">
+                            <div id="user-display-name" class="text-sm font-bold text-slate-800">Şagird</div>
+                            <div class="text-xs text-emerald-600 font-semibold">Aktiv</div>
+                        </div>
+                        <div class="h-10 w-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md" id="user-avatar">?</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main id="tab-topics" class="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
+            <div class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-2xl shadow-xl">
+                <div>
+                    <h2 class="text-2xl font-extrabold mb-1">Mövzular, PDF-lər və Testlər</h2>
+                    <p class="text-blue-100 text-sm">Google Drive materiallarını oxuyub və testləri işləyib təsdiq edin.</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/20 text-center">
+                    <div class="text-xs uppercase tracking-wider text-blue-200 font-bold">Tamamlanan</div>
+                    <div class="text-2xl font-black" id="completed-count">0 / 0</div>
+                </div>
+            </div>
+
+            <div id="topics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dinamik dolacaq -->
+            </div>
+        </main>
+
+        <main id="tab-videos" class="hidden flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
+            <div class="mb-8 bg-gradient-to-r from-rose-600 to-red-700 text-white p-6 rounded-2xl shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-extrabold mb-1">Video Dərslər (YouTube)</h2>
+                    <p class="text-rose-100 text-sm">Müəllim tərəfindən yüklənən dərsləri buradan izləyə bilərsiniz.</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/20 text-center">
+                    <div class="text-xs uppercase tracking-wider text-rose-200 font-bold">Cəmi Videolar</div>
+                    <div class="text-2xl font-black" id="video-count">0</div>
+                </div>
+            </div>
+
+            <div id="videos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dinamik dolacaq -->
+            </div>
+        </main>
+
+        <main id="tab-tracker" class="hidden flex-1 max-w-5xl mx-auto px-4 py-8 w-full">
+            <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 mb-8">
+                <h2 class="text-2xl font-black text-slate-800 mb-6 flex items-center gap-3">
+                    <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    Sənin Oxuma və İcraiyyə Hesabatın
+                </h2>
+                <div id="student-report-list" class="space-y-4">
+                    <!-- Dinamik dolacaq -->
+                </div>
+            </div>
+        </main>
+
+        <main id="tab-teacher" class="hidden flex-1 max-w-7xl mx-auto px-4 py-8 w-full space-y-8">
+            <div class="flex justify-between items-center bg-purple-900 text-white p-6 rounded-2xl shadow-xl">
+                <div>
+                    <h2 class="text-2xl font-black mb-1">Müəllim İdarəetmə Paneli</h2>
+                    <p class="text-purple-200 text-sm">Google Drive materialları, testlər, YouTube videoları əlavə edin və silin.</p>
+                </div>
+                <div class="bg-purple-800 px-4 py-3 rounded-xl border border-purple-700">
+                    <span class="text-xs text-purple-300 font-bold block">Aktiv Şagirdlər</span>
+                    <span id="total-students-count" class="text-2xl font-black">0</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Yeni Mövzu Əlavə Et -->
+                <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">+ Yeni Mövzu (PDF / Test) Əlavə Et</h3>
+                    <div class="space-y-4">
+                        <input type="text" id="new-topic-title" placeholder="Mövzu adı (Məs: Səfəvilər dövləti)" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+                        <input type="text" id="new-pdf-url" placeholder="Google Drive PDF linki" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+                        <input type="text" id="new-test-url" placeholder="Google Forms Test linki" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+                        <button onclick="addNewTopic()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition shadow-md">
+                            Mövzu Yüklə
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Yeni Video Əlavə Et -->
+                <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">+ Yeni YouTube Video Dərsi Əlavə Et</h3>
+                    <div class="space-y-4">
+                        <input type="text" id="new-video-title" placeholder="Video başlığı (Məs: Çaldıran döyüşü izahı)" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none">
+                        <input type="text" id="new-video-url" placeholder="YouTube video linki (və ya embed linki)" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none">
+                        <div class="text-xs text-slate-500">Məsələn: https://www.youtube.com/watch?v=XXXX və ya embed linki</div>
+                        <button onclick="addNewVideo()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 px-6 rounded-xl transition shadow-md">
+                            Video Əlavə Et
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mövcud Mövzuları İdarə Et (Silmə Paneli) -->
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Mövcud Mövzuları İdarə Et və ya Sil</h3>
+                <div id="teacher-topics-list" class="space-y-3">
+                    <!-- Dinamik dolacaq -->
+                </div>
+            </div>
+
+            <!-- Şagirdlərin Tərəqqi Cədvəli -->
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+                <div class="p-6 border-b border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-800">Şagirdlərin Oxuma və İcraiyyə Hesabatı</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider">
+                                <th class="py-4 px-6">Şagird</th>
+                                <th class="py-4 px-6">Oxuduğu Mövzular</th>
+                                <th class="py-4 px-6">Son Aktivlik</th>
+                                <th class="py-4 px-6 text-right">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacher-students-tbody" class="divide-y divide-slate-100">
+                            <!-- Dinamik dolacaq -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-topic" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden fade-in">
+            <div class="p-5 bg-slate-900 text-white flex justify-between items-center">
+                <h3 id="modal-title" class="text-lg font-bold">Mövzu Adı</h3>
+                <button onclick="closeTopicModal()" class="text-slate-400 hover:text-white font-bold text-xl px-2">&times;</button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto space-y-6">
+                <div>
+                    <h4 class="font-bold text-slate-700 mb-2 flex items-center gap-2">Dərs Materialı (PDF / Drive)</h4>
+                    <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center bg-slate-50">
+                        <p class="text-slate-600 mb-3 text-sm">Google Drive üzərindəki materialı oxumaq üçün aşağıdakı düyməyə klikləyin:</p>
+                        <a id="modal-pdf-link" href="#" target="_blank" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-md">
+                            PDF-i Yeni Pəncərədə Aç və Oxu
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-slate-700 mb-2 flex items-center gap-2">Mövzu Testi</h4>
+                    <div class="border border-blue-200 bg-blue-50/50 rounded-xl p-6 text-center">
+                        <p class="text-slate-600 mb-3 text-sm">Mövzu üzrə testləri işləmək üçün keçid edin:</p>
+                        <a id="modal-test-link" href="#" target="_blank" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-md">
+                            Testə Başla
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50 border border-emerald-200 p-5 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h5 class="font-bold text-emerald-900">Oxumağını Təsdiqlə</h5>
+                        <p class="text-emerald-700 text-xs">Materialı oxuyub testlə tanış olduqdan sonra bu düyməyə basın.</p>
+                    </div>
+                    <button id="btn-mark-read" onclick="" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-600/20 whitespace-nowrap">
+                        ✓ Oxudum və Bitirdim
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video İzləmə Modalı -->
+    <div id="modal-video" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden fade-in">
+            <div class="p-5 bg-slate-900 text-white flex justify-between items-center">
+                <h3 id="video-modal-title" class="text-lg font-bold">Video Dərs</h3>
+                <button onclick="closeVideoModal()" class="text-slate-400 hover:text-white font-bold text-xl px-2">&times;</button>
+            </div>
+            <div class="p-4 bg-black flex justify-center items-center">
+                <div id="video-container" class="w-full aspect-video">
+                    <!-- YouTube iframe bura yüklənəcək -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isTeacher = false;
+        let userData = { name: "", reads: {} };
+        let topicsList = [];
+        let videosList = [];
+        let allStudents = [];
+        let activeTopicId = null;
+
+        // Başlanğıc üçün default məlumatlar (İstəsəniz müəllim panelindən bunları silə bilərsiniz)
+        const defaultTopics = [
+            { id: "topic_1", title: "1. Qədim Azərbaycan Dövlətləri (Manna, İskit, Atropatena)", pdf: "https://drive.google.com", test: "https://forms.gle" },
+            { id: "topic_2", title: "2. Albaniya və Hun imperiyası", pdf: "https://drive.google.com", test: "https://forms.gle" },
+            { id: "topic_3", title: "3. III-VII əsrlərdə Azərbaycan", pdf: "https://drive.google.com", test: "https://forms.gle" }
+        ];
+
+        const defaultVideos = [
+            { id: "vid_1", title: "Manna dövlətinin yaranması və quruluşu", url: "https://www.youtube.com/embed/dQw4w9WgXcQ" }
+        ];
+
+        function initPortal() {
+            // Mövzuları localStorage-dən yüklə
+            const savedTopics = localStorage.getItem('tarix_portal_topics_v2');
+            if (savedTopics) {
+                try { topicsList = JSON.parse(savedTopics); } catch(e) { topicsList = defaultTopics; }
+            } else {
+                topicsList = defaultTopics;
+                localStorage.setItem('tarix_portal_topics_v2', JSON.stringify(defaultTopics));
+            }
+
+            // Videoları localStorage-dən yüklə
+            const savedVideos = localStorage.getItem('tarix_portal_videos_v2');
+            if (savedVideos) {
+                try { videosList = JSON.parse(savedVideos); } catch(e) { videosList = defaultVideos; }
+            } else {
+                videosList = defaultVideos;
+                localStorage.setItem('tarix_portal_videos_v2', JSON.stringify(defaultVideos));
+            }
+
+            const savedUser = localStorage.getItem('tarix_portal_current_user_v2');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    loadUserData();
+                    checkTeacherMode();
+                    startApp();
+                    return;
+                } catch(e) {}
+            }
+
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+        }
+
+        document.getElementById('btn-login').addEventListener('click', () => {
+            const name = document.getElementById('input-name').value.trim();
+            if(!name) {
+                document.getElementById('auth-error').classList.remove('hidden');
+                return;
+            }
+            
+            currentUser = { id: 'user_' + Date.now(), name: name };
+            localStorage.setItem('tarix_portal_current_user_v2', JSON.stringify(currentUser));
+            
+            loadUserData();
+            checkTeacherMode();
+
+            document.getElementById('auth-screen').classList.add('hidden');
+            startApp();
+        });
+
+        function loadUserData() {
+            const allUsersData = JSON.parse(localStorage.getItem('tarix_portal_users_data_v2') || '{}');
+            if (allUsersData[currentUser.id]) {
+                userData = allUsersData[currentUser.id];
+            } else {
+                userData = { name: currentUser.name, reads: {}, lastActive: new Date().toISOString() };
+                allUsersData[currentUser.id] = userData;
+                localStorage.setItem('tarix_portal_users_data_v2', JSON.stringify(allUsersData));
+            }
+        }
+
+        function saveUserData() {
+            if (!currentUser) return;
+            userData.lastActive = new Date().toISOString();
+            const allUsersData = JSON.parse(localStorage.getItem('tarix_portal_users_data_v2') || '{}');
+            allUsersData[currentUser.id] = userData;
+            localStorage.setItem('tarix_portal_users_data_v2', JSON.stringify(allUsersData));
+        }
+
+        function checkTeacherMode() {
+            if (userData.name.toLowerCase().includes("müəllim") || userData.name.toLowerCase().includes("admin")) {
+                isTeacher = true;
+                document.getElementById('nav-teacher').classList.remove('hidden');
+            }
+        }
+
+        function startApp() {
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+
+            document.getElementById('user-display-name').textContent = userData.name;
+            document.getElementById('user-avatar').textContent = userData.name.charAt(0).toUpperCase();
+
+            renderTopics();
+            renderVideos();
+            renderStudentReport();
+            loadAllStudents();
+            renderTeacherTopicsList();
+        }
+
+        function renderTopics() {
+            const grid = document.getElementById('topics-grid');
+            grid.innerHTML = '';
+
+            let completed = 0;
+            topicsList.forEach((topic, idx) => {
+                const isRead = userData.reads && userData.reads[topic.id];
+                if (isRead) completed++;
+
+                const card = `
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition">
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">Mövzu ${idx + 1}</span>
+                                ${isRead ? '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">✓ Oxundu</span>' : '<span class="bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full">Oxunmayıb</span>'}
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-800 mb-2">${topic.title}</h3>
+                            <p class="text-xs text-slate-500">Google Drive material və mövzu testləri daxildir.</p>
+                        </div>
+                        <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                            <button onclick="openTopicModal('${topic.id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2">
+                                Materialı Aç & Oxu
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', card);
+            });
+
+            document.getElementById('completed-count').textContent = `${completed} / ${topicsList.length}`;
+        }
+
+        function renderVideos() {
+            const grid = document.getElementById('videos-grid');
+            grid.innerHTML = '';
+            document.getElementById('video-count').textContent = videosList.length;
+
+            if(videosList.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400">Hələ ki video dərs əlavə olunmayıb.</div>`;
+                return;
+            }
+
+            videosList.forEach((vid, idx) => {
+                const card = `
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition">
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="bg-rose-50 text-rose-700 text-xs font-bold px-3 py-1 rounded-full">Dərs Video ${idx + 1}</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-800 mb-2">${vid.title}</h3>
+                            <p class="text-xs text-slate-500">YouTube video izləmə dərsi.</p>
+                        </div>
+                        <div class="px-6 py-4 bg-slate-50 border-t border-slate-100">
+                            <button onclick="openVideoModal('${vid.url}', '${vid.title}')" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2">
+                                Videonu İzlə
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', card);
+            });
+        }
+
+        window.openTopicModal = function(topicId) {
+            activeTopicId = topicId;
+            const topic = topicsList.find(t => t.id === topicId);
+            if(!topic) return;
+
+            document.getElementById('modal-title').textContent = topic.title;
+            document.getElementById('modal-pdf-link').href = topic.pdf || '#';
+            document.getElementById('modal-test-link').href = topic.test || '#';
+
+            const isRead = userData.reads && userData.reads[topicId];
+            const btnMark = document.getElementById('btn-mark-read');
+            if(isRead) {
+                btnMark.textContent = "✓ Oxunub (Yenidən təsdiqlə)";
+            } else {
+                btnMark.textContent = "✓ Oxudum və Bitirdim";
+            }
+
+            btnMark.onclick = () => markAsRead(topicId);
+            document.getElementById('modal-topic').classList.remove('hidden');
+        };
+
+        window.closeTopicModal = function() {
+            document.getElementById('modal-topic').classList.add('hidden');
+        };
+
+        window.openVideoModal = function(url, title) {
+            document.getElementById('video-modal-title').textContent = title;
+            
+            // YouTube linkini embed formatına çevirmək üçün köməkçi yoxlama
+            let embedUrl = url;
+            if(url.includes("watch?v=")) {
+                embedUrl = url.replace("watch?v=", "embed/");
+            } else if(url.includes("youtu.be/")) {
+                const parts = url.split("youtu.be/");
+                embedUrl = "https://www.youtube.com/embed/" + parts[1];
+            }
+
+            document.getElementById('video-container').innerHTML = `
+                <iframe src="${embedUrl}" class="w-full h-full rounded-xl" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            `;
+            document.getElementById('modal-video').classList.remove('hidden');
+        };
+
+        window.closeVideoModal = function() {
+            document.getElementById('video-container').innerHTML = '';
+            document.getElementById('modal-video').classList.add('hidden');
+        };
+
+        function markAsRead(topicId) {
+            if(!currentUser) return;
+            if(!userData.reads) userData.reads = {};
+            userData.reads[topicId] = {
+                completedAt: new Date().toISOString(),
+                status: "Oxundu"
+            };
+            
+            saveUserData();
+            renderTopics();
+            renderStudentReport();
+            closeTopicModal();
+        }
+
+        function renderStudentReport() {
+            const container = document.getElementById('student-report-list');
+            container.innerHTML = '';
+
+            topicsList.forEach((topic, idx) => {
+                const isRead = userData.reads && userData.reads[topic.id];
+                const item = `
+                    <div class="flex items-center justify-between p-4 rounded-xl border ${isRead ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200'}">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${isRead ? 'bg-emerald-600 text-white' : 'bg-slate-300 text-slate-700'}">${idx + 1}</div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">${topic.title}</h4>
+                                <p class="text-xs text-slate-500">${isRead ? `Tamamlanma: ${new Date(isRead.completedAt).toLocaleDateString()}` : 'Hələ oxunmayıb'}</p>
+                            </div>
+                        </div>
+                        <div>
+                            ${isRead ? '<span class="text-xs font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">Bitib</span>' : '<span class="text-xs font-semibold bg-amber-100 text-amber-800 px-3 py-1 rounded-full">Gözlənilir</span>'}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', item);
+            });
+        }
+
+        function loadAllStudents() {
+            const allUsersData = JSON.parse(localStorage.getItem('tarix_portal_users_data_v2') || '{}');
+            allStudents = [];
+            Object.keys(allUsersData).forEach(uid => {
+                const data = allUsersData[uid];
+                if(data.name && !data.name.toLowerCase().includes("müəllim")) {
+                    allStudents.push({ id: uid, ...data });
+                }
+            });
+
+            document.getElementById('total-students-count').textContent = allStudents.length;
+            renderTeacherTable();
+        }
+
+        function renderTeacherTable() {
+            const tbody = document.getElementById('teacher-students-tbody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            if(allStudents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">Hələ ki portalda qeydiyyatdan keçən şagird yoxdur.</td></tr>`;
+                return;
+            }
+
+            allStudents.forEach(student => {
+                const readCount = student.reads ? Object.keys(student.reads).length : 0;
+                const percent = topicsList.length > 0 ? Math.round((readCount / topicsList.length) * 100) : 0;
+
+                const tr = `
+                    <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                        <td class="py-4 px-6 font-bold text-slate-800">${student.name}</td>
+                        <td class="py-4 px-6">
+                            <div class="flex items-center gap-3">
+                                <span class="font-extrabold text-blue-600">${readCount} / ${topicsList.length} mövzu</span>
+                                <div class="w-32 bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${percent}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-xs text-slate-500">${student.lastActive ? new Date(student.lastActive).toLocaleString() : 'İndi'}</td>
+                        <td class="py-4 px-6 text-right">
+                            <span class="text-xs font-bold bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Aktiv Şagird</span>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', tr);
+            });
+        }
+
+        function renderTeacherTopicsList() {
+            const listContainer = document.getElementById('teacher-topics-list');
+            if(!listContainer) return;
+            listContainer.innerHTML = '';
+
+            if(topicsList.length === 0) {
+                listContainer.innerHTML = `<p class="text-sm text-slate-400">Heç bir mövzu yoxdur.</p>`;
+                return;
+            }
+
+            topicsList.forEach((topic, idx) => {
+                const item = `
+                    <div class="flex justify-between items-center p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <span class="font-bold text-sm text-slate-700">${idx + 1}. ${topic.title}</span>
+                        <button onclick="deleteTopic('${topic.id}')" class="bg-red-100 hover:bg-red-200 text-red-600 font-bold px-3 py-1.5 rounded-lg text-xs transition">
+                            Sil
+                        </button>
+                    </div>
+                `;
+                listContainer.insertAdjacentHTML('beforeend', item);
+            });
+        }
+
+        window.addNewTopic = function() {
+            const title = document.getElementById('new-topic-title').value.trim();
+            const pdf = document.getElementById('new-pdf-url').value.trim();
+            const test = document.getElementById('new-test-url').value.trim();
+
+            if(!title) return;
+
+            topicsList.push({
+                id: 'topic_' + Date.now(),
+                title,
+                pdf: pdf || "https://drive.google.com",
+                test: test || "https://forms.gle"
+            });
+
+            localStorage.setItem('tarix_portal_topics_v2', JSON.stringify(topicsList));
+
+            document.getElementById('new-topic-title').value = '';
+            document.getElementById('new-pdf-url').value = '';
+            document.getElementById('new-test-url').value = '';
+
+            renderTopics();
+            renderTeacherTopicsList();
+            renderStudentReport();
+            alert("Yeni material uğurla əlavə olundu!");
+        };
+
+        window.addNewVideo = function() {
+            const title = document.getElementById('new-video-title').value.trim();
+            const url = document.getElementById('new-video-url').value.trim();
+
+            if(!title || !url) return;
+
+            videosList.push({
+                id: 'vid_' + Date.now(),
+                title,
+                url
+            });
+
+            localStorage.setItem('tarix_portal_videos_v2', JSON.stringify(videosList));
+
+            document.getElementById('new-video-title').value = '';
+            document.getElementById('new-video-url').value = '';
+
+            renderVideos();
+            alert("Yeni video dərs uğurla əlavə olundu!");
+        };
+
+        window.deleteTopic = function(topicId) {
+            if(!confirm("Bu mövzunu silmək istədiyinizə əminsiniz?")) return;
+            
+            topicsList = topicsList.filter(t => t.id !== topicId);
+            localStorage.setItem('tarix_portal_topics_v2', JSON.stringify(topicsList));
+
+            renderTopics();
+            renderTeacherTopicsList();
+            renderStudentReport();
+        };
+
+        window.switchTab = function(tabName) {
+            document.getElementById('nav-topics').className = "px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition";
+            document.getElementById('nav-videos').className = "px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition";
+            document.getElementById('nav-tracker').className = "px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition";
+            const navTeacher = document.getElementById('nav-teacher');
+            if(navTeacher) navTeacher.className = "px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-purple-600 hover:bg-purple-50 transition border border-purple-200";
+
+            document.getElementById('tab-topics').classList.add('hidden');
+            document.getElementById('tab-videos').classList.add('hidden');
+            document.getElementById('tab-tracker').classList.add('hidden');
+            const tabTeacher = document.getElementById('tab-teacher');
+            if(tabTeacher) tabTeacher.classList.add('hidden');
+
+            if(tabName === 'topics') {
+                document.getElementById('nav-topics').className = "px-3 py-2 rounded-lg text-xs sm:text-sm font-bold bg-white shadow-sm text-blue-600 transition";
+                document.getElementById('tab-topics').classList.remove('hidden');
+            } else if(tabName === 'videos') {
+                document.getElementById('nav-videos').className = "px-3 py-2 rounded-lg text-xs sm:text-sm font-bold bg-white shadow-sm text-rose-600 transition";
+                document.getElementById('tab-videos').classList.remove('hidden');
+            } else if(tabName === 'tracker') {
+                document.getElementById('nav-tracker').className = "px-3 py-2 rounded-lg text-xs sm:text-sm font-bold bg-white shadow-sm text-blue-600 transition";
+                document.getElementById('tab-tracker').classList.remove('hidden');
+            } else if(tabName === 'teacher') {
+                if(navTeacher) navTeacher.className = "px-3 py-2 rounded-lg text-xs sm:text-sm font-bold bg-purple-600 text-white shadow-sm transition border border-purple-600";
+                if(tabTeacher) {
+                    tabTeacher.classList.remove('hidden');
+                    loadAllStudents();
+                    renderTeacherTopicsList();
+                }
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', initPortal);
+    </script>
+</body>
+</html>
